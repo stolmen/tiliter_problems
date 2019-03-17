@@ -22,6 +22,7 @@ def play_video(
 
     capture = cv2.VideoCapture(video_file_path)
     paused = False
+    back_up_frame = False
     fgbg = cv2.createBackgroundSubtractorMOG2(detectShadows=False)
 
     if fps is None:
@@ -40,37 +41,50 @@ def play_video(
         # fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(destination_file, -1, fps, display_resolution_actual, isColor=True)
 
+    # Read all the frames
+    frames = []
     while capture.isOpened():
-        if not paused:
-            ret, frame = capture.read()
+        ret, frame = capture.read()
+        if ret == False:
+            break
+        frames.append(frame)
+    capture.release()
+    print(f"Read {len(frames)} frames..")
 
-            if perform_segmentation:
-                frame = fgbg.apply(frame)
+    # Traverse the frames and do things.
+    idx = 0
+    while idx < len(frames):
+        frame = frames[idx]
 
-            if display_resolution != DISPLAY_RESOLUTION_DO_NOT_SCALE:
-                frame = cv2.resize(frame, display_resolution)
+        # Process the frame
+        if perform_segmentation:
+            frame = fgbg.apply(frame)
+        if display_resolution != DISPLAY_RESOLUTION_DO_NOT_SCALE:
+            frame = cv2.resize(frame, display_resolution)
+        if monochrome:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-            if monochrome:
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # Action the frame
+        if destination_file is not None:
+            out.write(frame)
+        else:
+            cv2.imshow('frame', frame)
+            wait_key_result_char = chr(cv2.waitKey(1000//fps) & 0xFF)
 
-            if destination_file is not None:
-                out.write(frame)
-            else:
-                cv2.imshow('frame', frame)
-
-            if ret == False:
-                break
-
-        wait_key_result_char = chr(cv2.waitKey(1000//fps) & 0xFF)
-
-        if destination_file is None:
             if wait_key_result_char == 'q':
                 break
             elif wait_key_result_char == 'p':
                 paused = not paused
+            elif wait_key_result_char == 'b':
+                back_up_frame = True
 
-    capture.release()
+        if back_up_frame:
+            idx -= 1
+            back_up_frame = False
+        elif not paused:
+            idx += 1
 
+    # Finalise
     if destination_file is None:
         cv2.destroyAllWindows()
     else:
