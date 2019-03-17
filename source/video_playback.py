@@ -5,24 +5,25 @@ Solution to "Video playback" candidate problem.
 """
 
 import click
-import numpy as np
 import cv2
-import msvcrt
+
+
+DISPLAY_RESOLUTION_DO_NOT_SCALE = (0, 0)
 
 
 def play_video(video_file_path, fps, display_resolution, monochrome):
     """ Plays the video at the given path. """
-    
+
     print("Playing video")
 
-    c = cv2.VideoCapture(video_file_path)
+    capture = cv2.VideoCapture(video_file_path)
 
     paused = False
-    while(c.isOpened()):
+    while capture.isOpened():
         if not paused:
-            ret, frame = c.read()
+            _, frame = capture.read()
 
-            if display_resolution != (0,0):
+            if display_resolution != DISPLAY_RESOLUTION_DO_NOT_SCALE:
                 frame = cv2.resize(frame, display_resolution)
 
             if monochrome:
@@ -37,29 +38,24 @@ def play_video(video_file_path, fps, display_resolution, monochrome):
         if wait_key_result_char == 'q':
             break
         elif wait_key_result_char == 'p':
-            if not paused:
-                paused = True
-            else:
-                paused = False
+            paused = not paused
 
-
-    c.release()
+    capture.release()
     cv2.destroyAllWindows()
 
 
-
-# Handling of command line arguments
 @click.command()
 @click.argument("video_file_path")
 @click.option("--frame_rate", default=None, type=int)
-@click.option("--display_resolution", default=(0, 0), type=(int, int))
+@click.option("--display_resolution", default=DISPLAY_RESOLUTION_DO_NOT_SCALE, type=(int, int))
 @click.option("--monochrome", is_flag=True)
 def play_video_command(**kwargs):
+    """ Handling of command line arguments """
     print(f"playing video with {kwargs}")
     play_video(
-        video_file_path=kwargs['video_file_path'], 
+        video_file_path=kwargs['video_file_path'],
         fps=kwargs['frame_rate'],
-        display_resolution=kwargs['display_resolution'], 
+        display_resolution=kwargs['display_resolution'],
         monochrome=kwargs['monochrome']
     )
 
