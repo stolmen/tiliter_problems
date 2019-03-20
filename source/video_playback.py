@@ -9,10 +9,7 @@ import threading
 from tkinter import Tk, N, S, E, W, StringVar, ttk
 
 import click
-from video import play_video
-
-
-DISPLAY_RESOLUTION_DO_NOT_SCALE = (0, 0)
+from video import play_video, DISPLAY_RESOLUTION_DO_NOT_SCALE
 
 
 class VideoControl(object):
@@ -26,11 +23,12 @@ class VideoControl(object):
 def master():
     pass
 
-@master.command("play_video")
+
+@master.command("play_video", help="Playback a video file")
 @click.argument("video_file_path")
-@click.option("--frame_rate", default=None, type=int)
-@click.option("--display_resolution", default=DISPLAY_RESOLUTION_DO_NOT_SCALE, type=(int, int))
-@click.option("--monochrome", is_flag=True)
+@click.option("--frame_rate", default=None, type=int, help="Frame rate of video in frames per second")
+@click.option("--display_resolution", default=DISPLAY_RESOLUTION_DO_NOT_SCALE, type=(int, int), help="Playback resolution. The resolution and aspect ratio of the original video file is not honoured. All frames are decimated/interpolated to achieve the desired display resolution.")
+@click.option("--monochrome", is_flag=True, help="Transform each frame into a monochrome image.")
 def play_video_command(**kwargs):
     """ Handling of command line arguments """
     print(f"playing video with {kwargs}")
@@ -41,12 +39,14 @@ def play_video_command(**kwargs):
         monochrome=kwargs['monochrome'],
         destination_file=None,
         perform_segmentation=False,
+        control_class_instance=None,
+        frame_action_callback=None,
     )
 
 
-@master.command("mask_video")
+@master.command("mask_video", help="Perform segmentation processing on a video and save the result.")
 @click.argument("original_file")
-@click.option("--destination_file", default=None)
+@click.option("--destination_file", default=None, help="Location of processed video. The default location is the same directory as the source file, with '_processed' appended to the filename.")
 def mask_video_commnand(**kwargs):
     print(f"Creating masked video with the following arguments: {kwargs}")
 
@@ -60,12 +60,13 @@ def mask_video_commnand(**kwargs):
         perform_segmentation=True,
         fps=None,
         display_resolution=DISPLAY_RESOLUTION_DO_NOT_SCALE,
-        monochrome=False
+        monochrome=False,
+        control_class_instance=None,
+        frame_action_callback=None,
     )
 
 
-
-@master.command("launch_player")
+@master.command("launch_player", help="Launch GUI video player")
 # @click.argument("video_file_path")
 # @click.option("--frame_rate", default=None, type=int)
 # @click.option("--display_resolution", default=DISPLAY_RESOLUTION_DO_NOT_SCALE, type=(int, int))

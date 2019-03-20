@@ -1,5 +1,9 @@
 import cv2
 
+
+DISPLAY_RESOLUTION_DO_NOT_SCALE = (0, 0)
+
+
 def play_video(
         video_file_path, fps, display_resolution, monochrome,
         destination_file, perform_segmentation, control_class_instance,
