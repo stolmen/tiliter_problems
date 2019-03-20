@@ -1,7 +1,3 @@
-import tornado.ioloop
-import tornado.web
-
-
 """
 
 Tiliter candidate problem
@@ -16,28 +12,57 @@ Requirements:
 Using tornado default web server in place of Django.
 """
 
+import os
+import tornado.ioloop
+import tornado.web
+import tornado.gen
+import video
+
+
+UPLOADS_PATH = "uploads"
+
 
 class ProcessVideoFileHandler(tornado.web.RequestHandler):
     def get(self):
-        # TODO: write front end with a form
-        # that opens a file dialogue
         self.render("file_upload_form.html")
 
 
 class UploadVideoHandler(tornado.web.RequestHandler):
     def post(self):
-        # TODO:
-        # 1) write incoming file data to disk
-        # 2) Use `video` module to process file
-        # 3) Present the processed file as download
-        pass
+        try:
+            os.mkdir(UPLOADS_PATH)
+        except FileExistsError:
+            pass
+
+        file_from_request = self.request.files['file1'][0]
+        file_data = file_from_request['body']
+        file_name = file_from_request['filename']
+        destination_file_path = os.path.join(UPLOADS_PATH, file_name)
+        with open(destination_file_path, 'wb+') as output_file:
+            output_file.write(file_data)
+        
+        base, ext = file_name.split('.')
+        destination_file = base + '_processed.' + ext
+        video.play_video(
+            video_file_path=destination_file_path,
+            destination_file=os.path.join(UPLOADS_PATH, destination_file),
+            perform_segmentation=True,
+            fps=None,
+            display_resolution=video.DISPLAY_RESOLUTION_DO_NOT_SCALE,
+            monochrome=False,
+            control_class_instance=None,
+            frame_action_callback=None,
+        )
+
+        self.redirect(f"/content/{destination_file}")
 
 
 def make_app():
     return tornado.web.Application([
         (r"/", ProcessVideoFileHandler),
         (r"/upload", UploadVideoHandler),
-    ])
+        (r"/content/(.*)", tornado.web.StaticFileHandler, {"path":UPLOADS_PATH}),
+    ], debug=True)
 
 
 if __name__ == "__main__":
