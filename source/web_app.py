@@ -43,15 +43,9 @@ class UploadVideoHandler(tornado.web.RequestHandler):
         
         base, ext = file_name.split('.')
         destination_file = base + '_processed.' + ext
-        video.play_video(
+        video.perform_segmentation_analysis_on_video(
             video_file_path=destination_file_path,
             destination_file=os.path.join(UPLOADS_PATH, destination_file),
-            perform_segmentation=True,
-            fps=None,
-            display_resolution=video.DISPLAY_RESOLUTION_DO_NOT_SCALE,
-            monochrome=False,
-            control_class_instance=None,
-            frame_action_callback=None,
         )
 
         self.redirect(f"/content/{destination_file}")

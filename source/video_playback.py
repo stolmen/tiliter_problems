@@ -4,12 +4,11 @@ Solution to "Video playback" candidate problem.
 
 """
 
-
 import threading
 from tkinter import Tk, N, S, E, W, StringVar, ttk
 
 import click
-from video import play_video, DISPLAY_RESOLUTION_DO_NOT_SCALE
+from video import perform_segmentation_analysis_on_video, play_video
 
 
 class VideoControl(object):
@@ -27,50 +26,40 @@ def master():
 @master.command("play_video", help="Playback a video file")
 @click.argument("video_file_path")
 @click.option("--frame_rate", default=None, type=int, help="Frame rate of video in frames per second")
-@click.option("--display_resolution", default=DISPLAY_RESOLUTION_DO_NOT_SCALE, type=(int, int), help="Playback resolution. The resolution and aspect ratio of the original video file is not honoured. All frames are decimated/interpolated to achieve the desired display resolution.")
+@click.option("--display_resolution", default=(None, None), type=(int, int), help="Playback resolution. The resolution and aspect ratio of the original video file is not honoured. All frames are decimated/interpolated to achieve the desired display resolution.")
 @click.option("--monochrome", is_flag=True, help="Transform each frame into a monochrome image.")
 def play_video_command(**kwargs):
     """ Handling of command line arguments """
     print(f"playing video with {kwargs}")
+
     play_video(
         video_file_path=kwargs['video_file_path'],
         fps=kwargs['frame_rate'],
         display_resolution=kwargs['display_resolution'],
-        monochrome=kwargs['monochrome'],
-        destination_file=None,
+        convert_to_monochrome=kwargs['monochrome'],
         perform_segmentation=False,
         control_class_instance=None,
-        frame_action_callback=None,
     )
 
 
-@master.command("mask_video", help="Perform segmentation processing on a video and save the result.")
+@master.command("segmentation_analysis", help="Perform segmentation analysis on a video and save the result.")
 @click.argument("original_file")
 @click.option("--destination_file", default=None, help="Location of processed video. The default location is the same directory as the source file, with '_processed' appended to the filename.")
-def mask_video_commnand(**kwargs):
+def perform_segmentation_on_video_command(**kwargs):
     print(f"Creating masked video with the following arguments: {kwargs}")
 
     if kwargs['destination_file'] is None:
         base, ext = kwargs["original_file"].split('.')
         destination_file = base + '_processed.' + ext
         print(f'saving to {destination_file}')
-    play_video(
+
+    perform_segmentation_analysis_on_video(
         video_file_path=kwargs["original_file"],
         destination_file=destination_file,
-        perform_segmentation=True,
-        fps=None,
-        display_resolution=DISPLAY_RESOLUTION_DO_NOT_SCALE,
-        monochrome=False,
-        control_class_instance=None,
-        frame_action_callback=None,
     )
 
 
 @master.command("launch_player", help="Launch GUI video player")
-# @click.argument("video_file_path")
-# @click.option("--frame_rate", default=None, type=int)
-# @click.option("--display_resolution", default=DISPLAY_RESOLUTION_DO_NOT_SCALE, type=(int, int))
-# @click.option("--monochrome", is_flag=True)
 def launch_gui_video_player(**kwargs):
 
     ctrl = VideoControl()
@@ -81,13 +70,11 @@ def launch_gui_video_player(**kwargs):
         ctrl.doquit = False
         play_video(
             video_file_path=video_path.get(),
-            destination_file=None,
-            perform_segmentation=False,
             fps=None,
-            display_resolution=DISPLAY_RESOLUTION_DO_NOT_SCALE,
-            monochrome=False,
+            display_resolution=(None, None),
+            convert_to_monochrome=False,
+            perform_segmentation=False,
             control_class_instance=ctrl,
-            frame_action_callback=None,
         )
 
     def play(*args):
@@ -116,26 +103,21 @@ def launch_gui_video_player(**kwargs):
     root.rowconfigure(0, weight=1)
 
     video_path = StringVar()
-    # meters = StringVar()
 
     path_entry = ttk.Entry(mainframe, width=7, textvariable=video_path)
     path_entry.grid(column=2, row=1, sticky=(W, E))
     path_entry.insert(0, r"E:\tilter\candidate_problem_solution\tiliter_data\video_2.mp4")
 
-    # ttk.Label(mainframe, textvariable=meters).grid(column=2, row=2, sticky=(W, E))
     ttk.Button(mainframe, text="PLAY", command=play).grid(column=1, row=2, sticky=W)
     ttk.Button(mainframe, text="Toggle pause", command=pause).grid(column=1, row=3, sticky=W)
     ttk.Button(mainframe, text="Back up 1 frame", command=back).grid(column=2, row=3, sticky=W)
     ttk.Button(mainframe, text="Stop video", command=stop_video).grid(column=2, row=2, sticky=W)
 
     ttk.Label(mainframe, text="path").grid(column=1, row=1, sticky=W)
-    # ttk.Label(mainframe, text="is equivalent to").grid(column=1, row=2, sticky=E)
-    # ttk.Label(mainframe, text="meters").grid(column=3, row=2, sticky=W)
 
     for child in mainframe.winfo_children(): child.grid_configure(padx=5, pady=5)
 
     path_entry.focus()
-    # root.bind('<Return>', calculate)
 
     try:
         root.mainloop()
